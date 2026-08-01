@@ -32,7 +32,7 @@ python3 secureboot-host-sign_app.py keygen --out keys
 
 And use the private key to sign your app.bin after each app change:
 ```
-python3 secureboot-host-sign_app.py sign --key keys/private.key --app app/app.bin --out signed
+python3 secureboot-host-sign_app.py sign --key keys/private.key --app ../../app/app.bin --out signed
 ```
 
 ### Making the program

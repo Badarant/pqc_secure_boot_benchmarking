@@ -46,6 +46,8 @@
 
 /* cycles counter for the app signature verification*/
 volatile uint32_t verify_cycles = 0;
+volatile uint32_t cyc_sha3   = 0;
+volatile uint32_t cyc_verify = 0;
 
 static void cycle_counter_init(void)
 {
@@ -79,24 +81,26 @@ static uint32_t hdr_u32(int i) { return ((const uint32_t *)HEADER_ADDR)[i]; }
 
 static int verify_app(void)
 {
-    if (hdr_u32(0) != HDR_MAGIC) 
-        return -1;            /* invalid magic */
+    if (hdr_u32(0) != HDR_MAGIC) return -1;
     uint32_t image_size = hdr_u32(2);
     uint32_t algo_id    = hdr_u32(3);
-    
-    if (algo_id != 1) 
-        return -2;                       /* unsupported algorithm */
+    if (algo_id != 1) return -2;
 
-
+    /* --- phase 1: digest SHA3-256 over the signed header+image --- */
     uint8_t digest[32];
-
+    uint32_t t0 = DWT_CYCCNT;
     sha3_256_two(digest, HEADER_ADDR, HDR_SIGNABLE, APP_ADDR, image_size);
+    cyc_sha3 = DWT_CYCCNT - t0;
 
+    /* --- phase 2: ML-DSA signature verification over digest --- */
     const uint8_t *sig = HEADER_ADDR + SIG_OFFSET;
-    return PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify(
+    uint32_t t1 = DWT_CYCCNT;
+    int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify(
         sig, PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES,
-        digest, sizeof digest,
-        PUBKEY_ADDR);                                  /* 0 = valid */
+        digest, sizeof digest, PUBKEY_ADDR);
+    cyc_verify = DWT_CYCCNT - t1;
+
+    return r;
 }
 
 static void delay(volatile uint32_t n) { while (n--) __asm__("nop"); }
@@ -141,9 +145,11 @@ int main(void)
     int r = verify_app(); 
     uint32_t cycles = DWT_CYCCNT - t0;
 
-    uart_puts("verify cycles: ");
-    uart_put_u32(cycles);
-    uart_puts("\r\n");
+    uart_puts("image_size: "); uart_put_u32(hdr_u32(2));      uart_puts("\r\n");
+    uart_puts("sha3 cycles:   "); uart_put_u32(cyc_sha3);        uart_puts("\r\n");
+    uart_puts("verify cycles: "); uart_put_u32(cyc_verify);      uart_puts("\r\n");
+    uart_puts("total cycles:  "); uart_put_u32(cyc_sha3+cyc_verify); uart_puts("\r\n");
+    uart_puts("total cycles:  "); uart_put_u32(cycles); uart_puts("\r\n");
 
     if (r == 0) 
     { 
