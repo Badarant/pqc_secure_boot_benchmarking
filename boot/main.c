@@ -23,7 +23,7 @@
 #include "fips202.h"
 #include "uart.h"
 
-#define APP_BASE     0x08021000UL
+#define APP_BASE     0x08022000UL
 
 #define RCC_AHB2ENR  (*(volatile uint32_t *)(0x40021000UL + 0x4C))
 #define GPIOB_MODER  (*(volatile uint32_t *)(0x48000400UL + 0x00))
@@ -33,7 +33,7 @@
 
 #define PUBKEY_ADDR   ((const uint8_t *)0x0801F000)   /* public key */
 #define HEADER_ADDR   ((const uint8_t *)0x08020000)   /* signed header */
-#define APP_ADDR      ((const uint8_t *)0x08021000)   /* app image */
+#define APP_ADDR      ((const uint8_t *)0x08022000)   /* app image */
 
 #define HDR_MAGIC     0x53344D50u
 #define HDR_SIGNABLE  32

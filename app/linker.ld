@@ -1,9 +1,9 @@
-/* App linker script - places the application at 0x08021000 (after the bootloader) */
+/* App linker script - places the application at 0x08022000 (after the bootloader) */
 ENTRY(Reset_Handler)
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = 0x08021000, LENGTH = 256K
+  FLASH (rx)  : ORIGIN = 0x08022000, LENGTH = 256K
   RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 640K
 }
 

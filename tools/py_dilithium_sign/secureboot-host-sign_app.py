@@ -35,7 +35,7 @@ never use it for on-device operations or production keys as-is.
 import argparse, hashlib, struct, os, sys
 from dilithium_py.ml_dsa import ML_DSA_65
 
-PAGE          = 0x1000
+PAGE          = 0x2000
 MAGIC         = 0x53344D50          # 'PM4S'
 HDR_VERSION   = 1
 ALGO_ML_DSA65 = 1
