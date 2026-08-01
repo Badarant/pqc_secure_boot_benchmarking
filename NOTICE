@@ -1,0 +1,14 @@
+THIRD PARTY SW
+This project includes third party SW, in the third_party_sw folder, without modifications and under the original respective licenses.
+Sources:
+pqm4 (https://github.com/mupq/pqm4) commit cc2c1b992b602d285bd15991a566d5f17b34c1fa
+and its submodules/commits:
+https://github.com/mupq/mupq/tree/ddcccedb2db9d0250856bd58ee5c46c61e506c5d
+https://github.com/pqclean/pqclean/tree/c3e6861fbb0a0b2721d2599c0a68430061414f18
+Included and used components:
+  - crypto_sign/ml-dsa-65/clean/ == reference implementation for ML-DSA-65, under its license present in its folder
+  - common/fips202.* == Keccak/SHA-3 based on public domain implementation (Van Keer; Van Assche, Bernstein, Schwabe)
+
+
+ORIGINAL CODE
+Original code of this project (boot, app, tools) is licensed under Apache 2.0 license.
