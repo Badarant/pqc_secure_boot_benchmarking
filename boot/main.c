@@ -23,6 +23,24 @@
 #include "fips202.h"
 #include "uart.h"
 
+#if defined(IMPL_CLEAN) && defined(SCHEME_44)
+  #define MLDSA_VERIFY    PQCLEAN_MLDSA44_CLEAN_crypto_sign_verify
+  #define MLDSA_SIG_BYTES PQCLEAN_MLDSA44_CLEAN_CRYPTO_BYTES
+  #define MLDSA_PK_BYTES  PQCLEAN_MLDSA44_CLEAN_CRYPTO_PUBLICKEYBYTES
+#elif defined(IMPL_CLEAN) && defined(SCHEME_65)
+  #define MLDSA_VERIFY    PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify
+  #define MLDSA_SIG_BYTES PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES
+  #define MLDSA_PK_BYTES  PQCLEAN_MLDSA65_CLEAN_CRYPTO_PUBLICKEYBYTES
+#elif defined(IMPL_CLEAN) && defined(SCHEME_87)
+  #define MLDSA_VERIFY    PQCLEAN_MLDSA87_CLEAN_crypto_sign_verify
+  #define MLDSA_SIG_BYTES PQCLEAN_MLDSA87_CLEAN_CRYPTO_BYTES
+  #define MLDSA_PK_BYTES  PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES
+#elif defined(IMPL_M4F)
+  #define MLDSA_VERIFY    crypto_sign_verify           /* macro din api.h m4f */
+  #define MLDSA_SIG_BYTES CRYPTO_BYTES
+  #define MLDSA_PK_BYTES  CRYPTO_PUBLICKEYBYTES
+#endif
+
 #define APP_BASE     0x08022000UL
 
 #define RCC_AHB2ENR  (*(volatile uint32_t *)(0x40021000UL + 0x4C))
@@ -38,6 +56,14 @@
 #define HDR_MAGIC     0x53344D50u
 #define HDR_SIGNABLE  32
 #define SIG_OFFSET    32
+
+#if defined(SCHEME_44)
+  #define EXPECTED_ALGO_ID 1
+#elif defined(SCHEME_65)
+  #define EXPECTED_ALGO_ID 2
+#elif defined(SCHEME_87)
+  #define EXPECTED_ALGO_ID 3
+#endif
 
 /* --- DWT cycle counter (Cortex-M4) --- */
 #define DEMCR       (*(volatile uint32_t *)0xE000EDFC)
@@ -57,6 +83,12 @@ static void cycle_counter_init(void)
 }
 
 
+// #ifdef IMPL_CLEAN
+// int PQCLEAN_randombytes(uint8_t *buf, size_t n) { (void)buf; (void)n; return -1; }
+// #endif
+// #ifdef IMPL_M4F
+// int randombytes(uint8_t *buf, size_t n) { (void)buf; (void)n; return -1; }
+// #endif
 int PQCLEAN_randombytes(uint8_t *buf, size_t n) { (void)buf; (void)n; return -1; }
 
 static void gpiob_output(int pin) {
@@ -84,7 +116,7 @@ static int verify_app(void)
     if (hdr_u32(0) != HDR_MAGIC) return -1;
     uint32_t image_size = hdr_u32(2);
     uint32_t algo_id    = hdr_u32(3);
-    if (algo_id != 1) return -2;
+    if (algo_id != EXPECTED_ALGO_ID) return -2;
 
     /* --- phase 1: digest SHA3-256 over the signed header+image --- */
     uint8_t digest[32];
@@ -95,8 +127,8 @@ static int verify_app(void)
     /* --- phase 2: ML-DSA signature verification over digest --- */
     const uint8_t *sig = HEADER_ADDR + SIG_OFFSET;
     uint32_t t1 = DWT_CYCCNT;
-    int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify(
-        sig, PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES,
+    int r = MLDSA_VERIFY(
+        sig, MLDSA_SIG_BYTES,
         digest, sizeof digest, PUBKEY_ADDR);
     cyc_verify = DWT_CYCCNT - t1;
 

@@ -32,69 +32,70 @@ Dependencies: pip install dilithium-py
 NOTE: dilithium-py is not side-channel safe. Fine for offline host signing;
 never use it for on-device operations or production keys as-is.
 """
+
 import argparse, hashlib, struct, os, sys
-from dilithium_py.ml_dsa import ML_DSA_65
+from dilithium_py.ml_dsa import ML_DSA_44, ML_DSA_65, ML_DSA_87
 
-PAGE          = 0x2000
-MAGIC         = 0x53344D50          # 'PM4S'
+PAGE          = 0x1000
+HEADER_PAGES  = 2                 # 8 KB header (2 pages) - uniform for all schemes
+HEADER_BYTES  = HEADER_PAGES * PAGE
+MAGIC         = 0x53344D50        # 'PM4S'
 HDR_VERSION   = 1
-ALGO_ML_DSA65 = 1
-SIG_LEN       = 3309                # ML-DSA-65 signature length
-PK_LEN        = 1952                # ML-DSA-65 public key length
 
-# signable header = 8 x uint32 (little-endian) = 32 bytes
-HDR_FMT   = "<8I"
+# scheme table: algo_id -> (impl, sig_len, pk_len)
+SCHEMES = {
+    "44": (ML_DSA_44, 1, 2420, 1312),
+    "65": (ML_DSA_65, 2, 3309, 1952),
+    "87": (ML_DSA_87, 3, 4627, 2592),
+}
+
+HDR_FMT   = "<8I"                  # magic, version, image_size, algo_id, reserved[4]
 HDR_BYTES = struct.calcsize(HDR_FMT)   # 32
 
-def pad(data: bytes, size: int) -> bytes:
+def pad(data, size):
     if len(data) > size:
-        sys.exit(f"error: {len(data)} bytes exceeds page size {size}")
-    return data + b"\xff" * (size - len(data))   # 0xFF = erased flash
+        sys.exit(f"error: {len(data)} B exceeds {size} B")
+    return data + b"\xff" * (size - len(data))
 
-def build_signable_header(image_size: int) -> bytes:
-    return struct.pack(HDR_FMT, MAGIC, HDR_VERSION, image_size,
-                       ALGO_ML_DSA65, 0, 0, 0, 0)
+def signable_header(image_size, algo_id):
+    return struct.pack(HDR_FMT, MAGIC, HDR_VERSION, image_size, algo_id, 0,0,0,0)
 
-def cmd_keygen(args):
-    os.makedirs(args.out, exist_ok=True)
-    pk, sk = ML_DSA_65.keygen()
-    assert len(pk) == PK_LEN
-    open(os.path.join(args.out, "private.key"), "wb").write(sk)
-    open(os.path.join(args.out, "public.key"),  "wb").write(pk)
-    # public key as a page-aligned flash image for 0x0801F000
-    open(os.path.join(args.out, "pubkey.bin"), "wb").write(pad(pk, PAGE))
-    print(f"keys written to {args.out}/  (private.key, public.key, pubkey.bin)")
-    print(f"  pk={len(pk)}  sk={len(sk)}  -> flash pubkey.bin at 0x0801F000")
+def cmd_keygen(a):
+    S, algo_id, _, pk_len = SCHEMES[a.scheme]
+    os.makedirs(a.out, exist_ok=True)
+    pk, sk = S.keygen()
+    assert len(pk) == pk_len
+    open(os.path.join(a.out, "private.key"), "wb").write(sk)
+    open(os.path.join(a.out, "public.key"),  "wb").write(pk)
+    open(os.path.join(a.out, "pubkey.bin"),  "wb").write(pad(pk, PAGE))
+    print(f"ML-DSA-{a.scheme}: keys in {a.out}/  pk={len(pk)} -> flash pubkey.bin at 0x0801F000")
 
-def cmd_sign(args):
-    sk    = open(args.key, "rb").read()
-    image = open(args.app, "rb").read()
-    image_size = len(image)
-
-    signable = build_signable_header(image_size)
+def cmd_sign(a):
+    S, algo_id, sig_len, _ = SCHEMES[a.scheme]
+    sk    = open(a.key, "rb").read()
+    image = open(a.app, "rb").read()
+    signable = signable_header(len(image), algo_id)
     digest   = hashlib.sha3_256(signable + image).digest()
-    sig      = ML_DSA_65.sign(sk, digest)
-    assert len(sig) == SIG_LEN, f"unexpected sig len {len(sig)}"
-
-    # full header page: signable fields + signature, padded to a 4 KB page
-    header_page = pad(signable + sig, PAGE)
-    # combined image to flash at 0x08020000 in one shot: header page + app
-    signed = header_page + image
-
-    os.makedirs(args.out, exist_ok=True)
-    open(os.path.join(args.out, "header.bin"),     "wb").write(header_page)
-    open(os.path.join(args.out, "signed_app.bin"), "wb").write(signed)
-    print(f"signed: image={image_size} B, digest={digest.hex()[:16]}...")
-    print(f"  header.bin     ({len(header_page)} B) -> 0x08020000")
-    print(f"  signed_app.bin ({len(signed)} B)      -> 0x08020000 (header+app in one flash)")
+    sig      = S.sign(sk, digest)
+    assert len(sig) == sig_len, f"sig {len(sig)} != {sig_len}"
+    header_page = pad(signable + sig, HEADER_BYTES)   # 8 KB
+    signed      = header_page + image
+    os.makedirs(a.out, exist_ok=True)
+    open(os.path.join(a.out, "signed_app.bin"), "wb").write(signed)
+    print(f"ML-DSA-{a.scheme}: image={len(image)} B, sig={len(sig)} B, algo_id={algo_id}")
+    print(f"  signed_app.bin ({len(signed)} B) -> 0x08020000 (header@0x08020000, app@0x08022000)")
 
 def main():
-    ap = argparse.ArgumentParser(description="PQC secure-boot signing tool (ML-DSA-65)")
+    ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(required=True)
-    k = sub.add_parser("keygen"); k.add_argument("--out", default="keys"); k.set_defaults(f=cmd_keygen)
-    s = sub.add_parser("sign")
-    s.add_argument("--key", required=True); s.add_argument("--app", required=True)
-    s.add_argument("--out", default="signed"); s.set_defaults(f=cmd_sign)
+    for cmd, fn in [("keygen", cmd_keygen), ("sign", cmd_sign)]:
+        p = sub.add_parser(cmd)
+        p.add_argument("--scheme", required=True, choices=["44","65","87"])
+        p.add_argument("--out", default=cmd)
+        if cmd == "sign":
+            p.add_argument("--key", required=True)
+            p.add_argument("--app", required=True)
+        p.set_defaults(f=fn)
     a = ap.parse_args(); a.f(a)
 
 if __name__ == "__main__":
