@@ -13,7 +13,10 @@ CFLAGS_BASE = -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
               -O2 -g3 -Wall -Wextra -ffreestanding -nostartfiles
 LDFLAGS = -T linker.ld -nostartfiles --specs=nosys.specs -Wl,--gc-sections
 
-LOCAL_SRC = startup.c main.c uart.c
+FREQ ?= 4                          # default: MSI 4 MHz (no PLL)
+FREQ_DEF = $(if $(filter 4,$(FREQ)),,-DCPU_FREQ_$(FREQ))
+
+LOCAL_SRC = startup.c main.c uart.c clock.c
 
 # ---- surse per implementare (depind de $(SCHEME)) ----
 CLEAN_DIR = $(PQCLEAN)/crypto_sign/$(SCHEME)/clean
@@ -38,7 +41,7 @@ IMPL_INC = $(if $(filter clean,$(IMPL)), \
 IMPL_DEF= $(if $(filter clean,$(IMPL)),-DIMPL_CLEAN,-DIMPL_M4F)
 SCHEME_DEF = $(if $(filter ml-dsa-44,$(SCHEME)),-DSCHEME_44,$(if $(filter ml-dsa-65,$(SCHEME)),-DSCHEME_65,-DSCHEME_87))
 
-OUT = boot-$(IMPL)-$(SCHEME)
+OUT = boot-$(IMPL)-$(SCHEME)-$(FREQ)MHz
 
 # ==== benchmarking ====
 
@@ -58,7 +61,7 @@ bench-m4f-87:   SCHEME=ml-dsa-87
 bench-clean-44 bench-m4f-44 bench-clean-65 bench-m4f-65 bench-clean-87 bench-m4f-87: _build
 
 _build:
-	$(CC) $(CFLAGS_BASE) $(IMPL_DEF) $(SCHEME_DEF) $(IMPL_INC) $(LDFLAGS) \
+	$(CC) $(CFLAGS_BASE) $(IMPL_DEF) $(SCHEME_DEF) $(FREQ_DEF) $(IMPL_INC) $(LDFLAGS) \
 	  $(LOCAL_SRC) $(SRC) -o $(OUT).elf
 	$(OBJCOPY) -O binary $(OUT).elf $(OUT).bin
 	$(SIZE) $(OUT).elf

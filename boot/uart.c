@@ -29,6 +29,10 @@
 #define LPUART1_CR1   (*(volatile uint32_t *)(0x40008000UL + 0x00))
 #define LPUART1_ISR   (*(volatile uint32_t *)(0x40008000UL + 0x1C))
 #define LPUART1_TDR   (*(volatile uint32_t *)(0x40008000UL + 0x28))
+#define RCC_CCIPR (*(volatile uint32_t *)(0x40021000UL + 0x88))
+#define RCC_CR    (*(volatile uint32_t *)0x40021000)
+
+extern const uint32_t g_sysclk_hz;
 
 void uart_init(void)
 {
@@ -50,9 +54,16 @@ void uart_init(void)
     *(volatile uint32_t *)(0x48001800UL + 0x24) &= ~(0xFu << ((8-8)*4));
     *(volatile uint32_t *)(0x48001800UL + 0x24) |=  (8u   << ((8-8)*4));  /* PG8 -> AF8 */
 
+/* Clock LPUART1 from HSI16 (independent of SYSCLK) so baud stays valid
+   at any CPU frequency. RCC_CCIPR bits[11:10] = LPUART1SEL: 10 = HSI16. */
+    RCC_CR |= (1u << 8);                    /* ensure HSI16 on */
+    while (!(RCC_CR & (1u << 10))) { }
+    RCC_CCIPR = (RCC_CCIPR & ~(3u << 10)) | (2u << 10);   /* LPUART1SEL = HSI16 */
+
+
     /* 4. Baud LPUART: BRR = (256 * f_ck) / baud. For MSI 4 MHz, 9600 baud:
           (256 * 4000000) / 9600 = 106667 */
-    LPUART1_BRR = (256u * 4000000u) / 9600u;
+    LPUART1_BRR = (uint32_t)(((uint64_t)256 * 16000000u) / 9600u);
     LPUART1_CR1 = (1u << 3) | (1u << 0);   /* TE + UE */
 }
 

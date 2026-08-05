@@ -1,3 +1,5 @@
+#ifndef _UART_H_
+#define _UART_H_
 /*
  * Copyright 2026 Liviu Silaghe liviu.silaghe@gmail.com
  *
@@ -15,9 +17,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#ifndef _UART_H_
-#define _UART_H_
 
 #include <stdint.h>
 #include <stddef.h>

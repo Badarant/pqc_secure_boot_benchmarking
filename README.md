@@ -15,54 +15,70 @@ https://github.com/pqclean/pqclean/tree/c3e6861fbb0a0b2721d2599c0a68430061414f18
 
 ## Getting Started
 
-### Dependencies
+### Cloning the repo
+```
+git clone https://github.com/Badarant/pqc_secure_boot_benchmarking.git
+cd pqc_secure_boot_benchmarking/
+git submodule update --init --recursive
+```
+
+### Making the program
 
 Project compiled under Ubuntu with arm-none-eabi-gcc
 
-### Installing
+```
+cd boot
+make clean-build 
+make <required scheme implementation> FREQ=<required frequency>
+cd ../app
+make clean
+make
+```
+
+<required scheme implementation> in [bench-clean-44, bench-m4f-44, bench-clean-65, bench-m4f-65, bench-clean-87, bench-m4f-87]
+<required frequency> in [4,20,40,80,120]
+
+
+### Signing the app
 
 For signing the app (firmware), the tools folder provides a Python signing script based on dilithium-py package. Install it accordingly:
-
 ```
 python3 -m venv .venv && source .venv/bin/activate
 pip install dilithium-py
-```
-
+``` 
 Then generate your private and public keys once:
+
 ```
 python secureboot-host-sign_app.py keygen --scheme 44 --out keys_44
 python secureboot-host-sign_app.py keygen --scheme 65 --out keys_65
 python secureboot-host-sign_app.py keygen --scheme 87 --out keys_87
 ```
 
-### Making the program
-
-```
-cd boot
-make clean-build 
-make <required scheme implementation>
-cd ../app
-make clean
-make
-```
-| Required Scheme Implementation| make option|
-
-|-----------------:|----------------:|
-
-|   Clean ML-DSA-44|    bench-clean-44|
-|   M4F ML-DSA-44|    bench-m4f-44|
-|   Clean ML-DSA-65|    bench-clean-65|
-|   M4F ML-DSA-44|    bench-m4f-65|
-|   Clean ML-DSA-87|    bench-clean-87|
-|   M4F ML-DSA-87|    bench-m4f-87|
-
-### Signing the program
-
-After successful And use the private key in tools/py_dilithium_sign/ to sign your app.bin after each app change:
+And use the private key in tools/py_dilithium_sign/ to sign your app.bin after each app change, for the respective scheme:
 ```
 python secureboot-host-sign_app.py sign --scheme 44 --key keys_44/private.key --app ../../app/app.bin --out signed_44
 python secureboot-host-sign_app.py sign --scheme 65 --key keys_65/private.key --app ../../app/app.bin --out signed_65
 python secureboot-host-sign_app.py sign --scheme 87 --key keys_87/private.key --app ../../app/app.bin --out signed_87
+```
+
+### Flashing the binaries
+
+Install OpenOCD from https://openocd.org/.
+
+Then flash the pubkey.bin file for your respective scheme:
+e.g:
+```
+openocd -f board/st_nucleo_l4.cfg -c "program keys_87/pubkey.bin 0x0801F000 verify reset exit"
+```
+
+Then flash the signed app:
+```
+openocd -f board/st_nucleo_l4.cfg -c "program signed_87/signed_app.bin 0x08020000 verify reset exit"
+```
+
+Then flash the binary:
+```
+openocd -f board/st_nucleo_l4.cfg -c "program ../../boot/boot-m4f-ml-dsa-87.bin 0x08000000 verify reset exit"
 ```
 
 ## Help

@@ -22,23 +22,34 @@
 #include "api.h" 
 #include "fips202.h"
 #include "uart.h"
+#include "clock.h"
 
 #if defined(IMPL_CLEAN) && defined(SCHEME_44)
   #define MLDSA_VERIFY    PQCLEAN_MLDSA44_CLEAN_crypto_sign_verify
   #define MLDSA_SIG_BYTES PQCLEAN_MLDSA44_CLEAN_CRYPTO_BYTES
   #define MLDSA_PK_BYTES  PQCLEAN_MLDSA44_CLEAN_CRYPTO_PUBLICKEYBYTES
+  #define IMPL_SCHEME     "CLEAN-ML-DSA-44"
 #elif defined(IMPL_CLEAN) && defined(SCHEME_65)
   #define MLDSA_VERIFY    PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify
   #define MLDSA_SIG_BYTES PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES
   #define MLDSA_PK_BYTES  PQCLEAN_MLDSA65_CLEAN_CRYPTO_PUBLICKEYBYTES
+  #define IMPL_SCHEME     "CLEAN-ML-DSA-65"
 #elif defined(IMPL_CLEAN) && defined(SCHEME_87)
   #define MLDSA_VERIFY    PQCLEAN_MLDSA87_CLEAN_crypto_sign_verify
   #define MLDSA_SIG_BYTES PQCLEAN_MLDSA87_CLEAN_CRYPTO_BYTES
   #define MLDSA_PK_BYTES  PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES
+  #define IMPL_SCHEME     "CLEAN-ML-DSA-87"
 #elif defined(IMPL_M4F)
   #define MLDSA_VERIFY    crypto_sign_verify           /* macro din api.h m4f */
   #define MLDSA_SIG_BYTES CRYPTO_BYTES
   #define MLDSA_PK_BYTES  CRYPTO_PUBLICKEYBYTES
+  #ifdef SCHEME_44
+    #define IMPL_SCHEME     "M4F-ML-DSA-44"
+  #elif SCHEME_65
+    #define IMPL_SCHEME     "M4F-ML-DSA-65"
+  #elif SCHEME_87
+    #define IMPL_SCHEME     "M4F-ML-DSA-87"
+  #endif
 #endif
 
 #define APP_BASE     0x08022000UL
@@ -69,6 +80,9 @@
 #define DEMCR       (*(volatile uint32_t *)0xE000EDFC)
 #define DWT_CTRL    (*(volatile uint32_t *)0xE0001000)
 #define DWT_CYCCNT  (*(volatile uint32_t *)0xE0001004)
+
+extern void clock_init(void);
+extern const uint32_t g_sysclk_hz;
 
 /* cycles counter for the app signature verification*/
 volatile uint32_t verify_cycles = 0;
@@ -168,6 +182,7 @@ static void jump_to_app(void)
 
 int main(void)
 {
+    clock_init();
     cycle_counter_init();
     uart_init();
 
@@ -177,6 +192,8 @@ int main(void)
     int r = verify_app(); 
     uint32_t cycles = DWT_CYCCNT - t0;
 
+    
+    uart_puts(IMPL_SCHEME); uart_puts(" frequency [MHz]: "); uart_put_u32(SYSCLK_HZ/1000000);      uart_puts("\r\n");   
     uart_puts("image_size: "); uart_put_u32(hdr_u32(2));      uart_puts("\r\n");
     uart_puts("sha3 cycles:   "); uart_put_u32(cyc_sha3);        uart_puts("\r\n");
     uart_puts("verify cycles: "); uart_put_u32(cyc_verify);      uart_puts("\r\n");
