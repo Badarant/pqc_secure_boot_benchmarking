@@ -81,7 +81,27 @@ Then flash the binary:
 openocd -f board/st_nucleo_l4.cfg -c "program ../../boot/boot-m4f-ml-dsa-87.bin 0x08000000 verify reset exit"
 ```
 
-## Help
+## Reading the results
+
+The boot will print on UART the ML-DSA scheme used, the stack usage, the frequency at which it runs, the SHA3 and Verify Cycles Count, as well as the verification verdict:
+
+```
+M4F-ML-DSA-87 frequency [MHz]: 4
+image_size: 264
+sha3 cycles:   33265
+verify cycles: 4309934
+total cycles:  4343199
+stack usage:  12200bytes
+VALID -> boot
+```
+
+To monitor the UART interface of th Nucleo board, you can use tty under Ubuntu:
+
+```
+stty -F /dev/ttyACM0 9600 raw
+cat /dev/ttyACM0 > myFileExample.txt
+```
+
 
 ## Authors
 
