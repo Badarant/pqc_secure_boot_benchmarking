@@ -85,6 +85,8 @@ Current present measurements are performed on successful verification tests, whe
 
 SHA3-256 is used for the firmware digest because ML-DSA already includes Keccak (SHAKE) internally. On an M4 without a dedicated hardware accelerator, SHA-256 would be faster and could reduce the (dominant) hashing cost on large firmware, at the same security level, though ML-DSA still mandates Keccak internally, so this optimizes only the digest, not the verification. A full evaluation with SHA2-256 is left as future work.
 
+All data measured for this analysis can be found in [CSV format, here.](https://github.com/Badarant/pqc_secure_boot_benchmarking/blob/main/docs/benchmark_all_data.xlsx)
+
 ## Conclusions
 
 •	For realistic firmware sizes, SHA3-256 hashing dominates total boot time, not ML-DSA verification, and this cost is common to both classical and PQC signatures, not specific to post-quantum
