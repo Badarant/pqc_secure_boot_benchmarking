@@ -83,6 +83,7 @@
 
 extern void clock_init(void);
 extern const uint32_t g_sysclk_hz;
+extern uint32_t stack_used_bytes(void);
 
 /* cycles counter for the app signature verification*/
 volatile uint32_t verify_cycles = 0;
@@ -188,17 +189,14 @@ int main(void)
 
     signal_bootloader();
         
-    uint32_t t0 = DWT_CYCCNT;
     int r = verify_app(); 
-    uint32_t cycles = DWT_CYCCNT - t0;
-
     
     uart_puts(IMPL_SCHEME); uart_puts(" frequency [MHz]: "); uart_put_u32(SYSCLK_HZ/1000000);      uart_puts("\r\n");   
     uart_puts("image_size: "); uart_put_u32(hdr_u32(2));      uart_puts("\r\n");
     uart_puts("sha3 cycles:   "); uart_put_u32(cyc_sha3);        uart_puts("\r\n");
     uart_puts("verify cycles: "); uart_put_u32(cyc_verify);      uart_puts("\r\n");
     uart_puts("total cycles:  "); uart_put_u32(cyc_sha3+cyc_verify); uart_puts("\r\n");
-    uart_puts("total cycles:  "); uart_put_u32(cycles); uart_puts("\r\n");
+    uart_puts("stack usage:  "); uart_put_u32(stack_used_bytes()); uart_puts("bytes\r\n");
 
     if (r == 0) 
     { 

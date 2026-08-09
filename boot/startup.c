@@ -19,11 +19,39 @@
 /* Bootloader startup: same minimal pattern as the app. */
 #include <stdint.h>
 
-extern uint32_t _sidata, _sdata, _edata, _sbss, _ebss, _estack;
+/* stack painting: fill unused stack region with a known marker.
+   Paint from just above the heap end up to near the current SP,
+   leaving a safety gap so we don't clobber our own frame. */
+#define STACK_MARKER 0xDEADBEEFu
+
+extern uint32_t _sidata, _sdata, _edata, _sbss, _ebss, _estack, end;
 extern const uint32_t vector_table[];
 int  main(void);
 void Reset_Handler(void);
 void Default_Handler(void);
+
+
+static void paint_stack(void)
+{
+    uint32_t *p;
+    register uint32_t sp __asm__("sp");
+    /* paint from heap end up to ~256 bytes below current SP (safety gap) */
+    for (p = &end; p < (uint32_t *)(sp - 256); p++) {
+        *p = STACK_MARKER;
+    }
+}
+
+uint32_t stack_used_bytes(void)
+{
+    uint32_t *p;
+    /* scan upward from heap end; first non-marker word = deepest stack use */
+    for (p = &end; p < &_estack; p++) {
+        if (*p != STACK_MARKER)
+            break;   /* found the high-water mark */
+    }
+    /* bytes from here to top of stack = max stack used */
+    return (uint32_t)((uint8_t *)&_estack - (uint8_t *)p);
+}
 
 void Reset_Handler(void)
 {
@@ -38,6 +66,7 @@ void Reset_Handler(void)
     while (dst < &_edata) *dst++ = *src++;
     for (dst = &_sbss; dst < &_ebss; ) *dst++ = 0;
     *(volatile uint32_t *)0xE000ED08 = (uint32_t)vector_table; /* SCB->VTOR = our table */
+    paint_stack();
     main();
     for (;;) {}
 }
