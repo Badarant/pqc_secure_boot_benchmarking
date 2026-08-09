@@ -19,9 +19,9 @@ Comparing these parameters to the ones of classical asymmetric, non-quantum resi
 
 ## Measurements & Analysis
 I took the example target of this ARM Cortex M4 core based on its usage in embedded projects.
-Benchmarks published in the https://github.com/mupq/pqm4 repo, ran on ARM Cortex M4, offer insightful information on the performance of all operations on ML-DSA: key generation, sign, verify.  What I wanted to measure in addition, was the performance of the entire chain, ML-DSA included, in the use-case of embedded secure boot.
+Benchmarks published in the [pqm4](https://github.com/mupq/pqm4) repo, ran on ARM Cortex M4, offer insightful information on the performance of all operations on ML-DSA: key generation, sign, verify.  What I wanted to measure in addition, was the performance of the entire chain, ML-DSA included, in the use-case of embedded secure boot.
 
-Making use of the **m4f**, the optimized for execution speed implementation, from the aforementioned pqm4 repo, I built the boot + app + signing tool environment in https://github.com/Badarant/pqc_secure_boot_benchmarking.
+Making use of the **m4f**, the optimized for execution speed implementation, from the aforementioned pqm4 repo, I built the boot + app + signing tool environment in [pqc_secure_boot_benchmarking](https://github.com/Badarant/pqc_secure_boot_benchmarking).
 What this repo is implementing is a way to build a secure boot binary with selectable variant of ML-DSA, running at selectable CPU frequencies, and verifying different sized signed applications. The signature of the application is calculated by signing with ML-DSA the **SHA3-256** hash over the firmware header and firmware binary.
 
 The environment is designed for and tested on the Nucleo L4R5ZI development board, one of the development boards used also in the aforementioned pqm4. This board being available with a 2MB flash, the evaluation was done on different app sizes ranging from 264B (the size of a simple app with a blinking LED on Nucleo) to 1855kB (artificially padded binary file). The RAM size of this board is 640kB.
@@ -98,8 +98,8 @@ SHA3-256 is used for the firmware digest because ML-DSA already includes Keccak 
 Liviu Silaghe liviu.silaghe@gmail.com 
 
 ## References
-1.	Matthias J. Kannwischer and Richard Petri and Joost Rijneveld and Peter Schwabe and Ko Stoffelen. "PQM4: Post-quantum crypto library for the ARM Cortex-M4." https://github.com/mupq/pqm4 
-2.	NIST. Post Quantum Cryptography FIPS Approved https://csrc.nist.gov/news/2024/postquantum-cryptography-fips-approved 
-3.	NIST. FIPS 202: SHA-3 Standard. 2015. https://csrc.nist.gov/pubs/fips/202/final
+1.	Matthias J. Kannwischer and Richard Petri and Joost Rijneveld and Peter Schwabe and Ko Stoffelen. "PQM4: Post-quantum crypto library for the ARM Cortex-M4." [https://github.com/mupq/pqm4](https://github.com/mupq/pqm4)
+2.	NIST. Post Quantum Cryptography FIPS Approved [https://csrc.nist.gov/news/2024/postquantum-cryptography-fips-approved](https://csrc.nist.gov/news/2024/postquantum-cryptography-fips-approved)
+3.	NIST. FIPS 202: SHA-3 Standard. 2015. [https://csrc.nist.gov/pubs/fips/202/final](https://csrc.nist.gov/pubs/fips/202/final)
 
 
