@@ -101,7 +101,9 @@ Liviu Silaghe liviu.silaghe@gmail.com
 
 ## References
 1.	Matthias J. Kannwischer and Richard Petri and Joost Rijneveld and Peter Schwabe and Ko Stoffelen. "PQM4: Post-quantum crypto library for the ARM Cortex-M4." [https://github.com/mupq/pqm4](https://github.com/mupq/pqm4)
+
 2.	NIST. Post Quantum Cryptography FIPS Approved [https://csrc.nist.gov/news/2024/postquantum-cryptography-fips-approved](https://csrc.nist.gov/news/2024/postquantum-cryptography-fips-approved)
+
 3.	NIST. FIPS 202: SHA-3 Standard. 2015. [https://csrc.nist.gov/pubs/fips/202/final](https://csrc.nist.gov/pubs/fips/202/final)
 
 
