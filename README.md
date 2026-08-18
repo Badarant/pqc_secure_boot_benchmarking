@@ -41,7 +41,9 @@ make
 
 ### Signing the app
 
-For signing the app (firmware), the tools folder provides a Python signing script based on dilithium-py package. Install it accordingly:
+For signing the app (firmware), the tools folder provides a Python signing script based on dilithium-py package. (dilithium-py by Giacomo Pope, dual-licensed MIT/Apache-2.0)
+
+Install it accordingly:
 ```
 python3 -m venv .venv && source .venv/bin/activate
 pip install dilithium-py
@@ -115,4 +117,4 @@ Liviu Silaghe liviu.silaghe@gmail.com
 
 ## License
 
-This project is licensed according LICENSE file in the root folder and according to the reused third party sw licenses present in the third_party_sw folder
+This project is licensed according LICENSE file in the root folder and according to the reused third party sw licenses present in the third_party_sw folder. The third_party_sw\pqm4 submodule includes benchmark tooling with additional dependencies (e.g. tqdm, MPL-2.0) that are not used, compiled, or distributed by this project.
