@@ -80,9 +80,9 @@ def cmd_sign(a):
     image = open(a.app, "rb").read()
     signable = signable_header(len(image), algo_id)
 
-    if(a.hash == "SHA-256"):
+    if(a.hash == "SHA_256"):
         digest   = hashlib.sha256(signable + image).digest()
-    if(a.hash == "SHA3-256"):
+    if(a.hash == "SHA3_256"):
         digest   = hashlib.sha3_256(signable + image).digest()
 
     # same format as the bootloader's UART dump, for side-by-side comparison
@@ -104,7 +104,7 @@ def main():
     for cmd, fn in [("keygen", cmd_keygen), ("sign", cmd_sign)]:
         p = sub.add_parser(cmd)
         p.add_argument("--scheme", required=True, choices=["44","65","87"])
-        p.add_argument("--hash", required=True, choices=["SHA-256","SHA3-256"])
+        p.add_argument("--hash", required=True, choices=["SHA_256","SHA3_256"])
         p.add_argument("--out", default=cmd)
         if cmd == "sign":
             p.add_argument("--key", required=True)

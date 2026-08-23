@@ -39,7 +39,7 @@ make
 
 (required frequency) in [4,20,40,80,120]
 
-(required hash) in [SHA-256, SHA3-256]
+(required hash) in [SHA_256, SHA3_256]
 
 ### Signing the app
 
@@ -66,7 +66,7 @@ python secureboot-host-sign_app.py sign --scheme 65 --hash (required hash) --key
 python secureboot-host-sign_app.py sign --scheme 87 --hash (required hash) --key keys_87/private.key --app ../../app/app.bin --out signed_87
 ```
 
-(required hash) in [SHA-256, SHA3-256]
+(required hash) in [SHA_256, SHA3_256]
 
 ### Flashing the binaries
 
