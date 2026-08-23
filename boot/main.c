@@ -23,6 +23,9 @@
 #include "fips202.h"
 #include "uart.h"
 #include "clock.h"
+#if defined(HASH_SHA_256)
+#include "sha2.h"
+#endif
 
 #if defined(IMPL_CLEAN) && defined(SCHEME_44)
   #define MLDSA_VERIFY    PQCLEAN_MLDSA44_CLEAN_crypto_sign_verify
@@ -90,6 +93,9 @@ volatile uint32_t verify_cycles = 0;
 volatile uint32_t cyc_sha3   = 0;
 volatile uint32_t cyc_verify = 0;
 
+/* digest computed over header+image, kept for UART dump in main() */
+static uint8_t g_digest[32];
+
 static void cycle_counter_init(void)
 {
     DEMCR    |= (1u << 24);     /* TRCENA: trace/DWT unit activation*/
@@ -112,6 +118,8 @@ static void gpiob_output(int pin) {
     GPIOB_MODER |=  (1u << (pin * 2));
 }
 
+
+#if defined(HASH_SHA3_256)
 static void sha3_256_two(uint8_t out[32],
                          const uint8_t *a, size_t alen,
                          const uint8_t *b, size_t blen)
@@ -122,6 +130,37 @@ static void sha3_256_two(uint8_t out[32],
     sha3_256_inc_absorb(&ctx, b, blen);   /* app image from flash */
     sha3_256_inc_finalize(out, &ctx);
 }
+#elif  defined(HASH_SHA_256)
+static void sha_256_two(uint8_t out[32],
+                         const uint8_t *a, size_t alen,
+                         const uint8_t *b, size_t blen)
+{
+    sha256ctx ctx __attribute__((aligned(8)));
+    uint8_t first[64];
+    size_t i, take;
+
+    sha256_inc_init(&ctx);
+
+    /* Unlike SHA3's inc_absorb(), sha256_inc_blocks() counts 64-byte BLOCKS and
+       requires block-aligned input, so the 32-byte header cannot be absorbed on
+       its own: it has to be merged with the head of the image into block 0. */
+    if (alen + blen <= 64) {
+        for (i = 0; i < alen; i++) first[i] = a[i];
+        for (i = 0; i < blen; i++) first[alen + i] = b[i];
+        sha256_inc_finalize(out, &ctx, first, alen + blen);
+        return;
+    }
+
+    take = 64 - alen;                          /* bytes of b that fill block 0 */
+    for (i = 0; i < alen; i++) first[i] = a[i];
+    for (i = 0; i < take; i++) first[alen + i] = b[i];
+    sha256_inc_blocks(&ctx, first, 1);
+
+    /* inc_finalize() hashes every full block of its input, then pads the tail */
+    sha256_inc_finalize(out, &ctx, b + take, blen - take);
+}
+#endif
+
 
 /* header layout (little-endian): magic, hdr_version, image_size, algo_id, rez[4] */
 static uint32_t hdr_u32(int i) { return ((const uint32_t *)HEADER_ADDR)[i]; }
@@ -134,9 +173,14 @@ static int verify_app(void)
     if (algo_id != EXPECTED_ALGO_ID) return -2;
 
     /* --- phase 1: digest SHA3-256 over the signed header+image --- */
-    uint8_t digest[32];
+    uint8_t *digest = g_digest;
     uint32_t t0 = DWT_CYCCNT;
+    #if defined(HASH_SHA3_256)
     sha3_256_two(digest, HEADER_ADDR, HDR_SIGNABLE, APP_ADDR, image_size);
+    #elif defined(HASH_SHA_256)
+    sha_256_two(digest, HEADER_ADDR, HDR_SIGNABLE, APP_ADDR, image_size);
+    #endif
+
     cyc_sha3 = DWT_CYCCNT - t0;
 
     /* --- phase 2: ML-DSA signature verification over digest --- */
@@ -144,7 +188,7 @@ static int verify_app(void)
     uint32_t t1 = DWT_CYCCNT;
     int r = MLDSA_VERIFY(
         sig, MLDSA_SIG_BYTES,
-        digest, sizeof digest, PUBKEY_ADDR);
+        digest, sizeof g_digest, PUBKEY_ADDR);
     cyc_verify = DWT_CYCCNT - t1;
 
     return r;
@@ -193,7 +237,11 @@ int main(void)
     
     uart_puts(IMPL_SCHEME); uart_puts(" frequency [MHz]: "); uart_put_u32(SYSCLK_HZ/1000000);      uart_puts("\r\n");   
     uart_puts("image_size: "); uart_put_u32(hdr_u32(2));      uart_puts("\r\n");
-    uart_puts("sha3 cycles:   "); uart_put_u32(cyc_sha3);        uart_puts("\r\n");
+#if defined(HASH_SHA3_256)
+    uart_puts("sha3-256 cycles:   "); uart_put_u32(cyc_sha3);        uart_puts("\r\n");
+#elif defined(HASH_SHA_256)
+    uart_puts("sha-256 cycles:   "); uart_put_u32(cyc_sha3);        uart_puts("\r\n");
+#endif
     uart_puts("verify cycles: "); uart_put_u32(cyc_verify);      uart_puts("\r\n");
     uart_puts("total cycles:  "); uart_put_u32(cyc_sha3+cyc_verify); uart_puts("\r\n");
     uart_puts("stack usage:  "); uart_put_u32(stack_used_bytes()); uart_puts("bytes\r\n");
@@ -206,7 +254,7 @@ int main(void)
         jump_to_app();                    /* blinking green -> app running */
     }
 
-    uart_puts("INVALID -> halt\r\n"); /* rosu */ 
+    uart_puts("INVALID -> halt\r\n"); /* red */ 
     gpiob_output(RED_PIN);
     GPIOB_BSRR = (1u << RED_PIN);         /* permanent red -> verification failed */
 

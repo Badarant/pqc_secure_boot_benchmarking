@@ -29,15 +29,17 @@ Project compiled under Ubuntu with arm-none-eabi-gcc
 ```
 cd boot
 make clean-build 
-make <required scheme implementation> FREQ=<required frequency>
+make (required scheme implementation) HASH=(required hash) FREQ=(required frequency)
 cd ../app
 make clean
 make
 ```
 
-<required scheme implementation> in [bench-clean-44, bench-m4f-44, bench-clean-65, bench-m4f-65, bench-clean-87, bench-m4f-87]
-<required frequency> in [4,20,40,80,120]
+(required scheme implementation) in [bench-clean-44, bench-m4f-44, bench-clean-65, bench-m4f-65, bench-clean-87, bench-m4f-87]
 
+(required frequency) in [4,20,40,80,120]
+
+(required hash) in [SHA-256, SHA3-256]
 
 ### Signing the app
 
@@ -56,12 +58,15 @@ python secureboot-host-sign_app.py keygen --scheme 65 --out keys_65
 python secureboot-host-sign_app.py keygen --scheme 87 --out keys_87
 ```
 
+
 And use the private key in tools/py_dilithium_sign/ to sign your app.bin after each app change, for the respective scheme:
 ```
-python secureboot-host-sign_app.py sign --scheme 44 --key keys_44/private.key --app ../../app/app.bin --out signed_44
-python secureboot-host-sign_app.py sign --scheme 65 --key keys_65/private.key --app ../../app/app.bin --out signed_65
-python secureboot-host-sign_app.py sign --scheme 87 --key keys_87/private.key --app ../../app/app.bin --out signed_87
+python secureboot-host-sign_app.py sign --scheme 44 --hash (required hash) --key keys_44/private.key --app ../../app/app.bin --out signed_44
+python secureboot-host-sign_app.py sign --scheme 65 --hash (required hash) --key keys_65/private.key --app ../../app/app.bin --out signed_65
+python secureboot-host-sign_app.py sign --scheme 87 --hash (required hash) --key keys_87/private.key --app ../../app/app.bin --out signed_87
 ```
+
+(required hash) in [SHA-256, SHA3-256]
 
 ### Flashing the binaries
 
@@ -109,11 +114,6 @@ cat /dev/ttyACM0 > myFileExample.txt
 
 Liviu Silaghe liviu.silaghe@gmail.com
 
-## Version History
-* 0.2
-    * Include both Clean and M4F implementations for all 3 schemes ML-DSA-44, ML-DSA-65 and ML-DSA-87
-* 0.1
-    * Initial Release using PQClean implementation of ML-DSA-65 scheme for signing and verifying a simple app of ~260bytes
 
 ## License
 

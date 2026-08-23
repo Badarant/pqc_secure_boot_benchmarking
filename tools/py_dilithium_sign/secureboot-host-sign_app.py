@@ -49,6 +49,10 @@ SCHEMES = {
     "87": (ML_DSA_87, 3, 4627, 2592),
 }
 
+HASHES = {
+    ""
+}
+
 HDR_FMT   = "<8I"                  # magic, version, image_size, algo_id, reserved[4]
 HDR_BYTES = struct.calcsize(HDR_FMT)   # 32
 
@@ -75,7 +79,16 @@ def cmd_sign(a):
     sk    = open(a.key, "rb").read()
     image = open(a.app, "rb").read()
     signable = signable_header(len(image), algo_id)
-    digest   = hashlib.sha3_256(signable + image).digest()
+
+    if(a.hash == "SHA-256"):
+        digest   = hashlib.sha256(signable + image).digest()
+    if(a.hash == "SHA3-256"):
+        digest   = hashlib.sha3_256(signable + image).digest()
+
+    # same format as the bootloader's UART dump, for side-by-side comparison
+    print(f"image_size: {len(image)}")
+    print(f"{a.hash} digest: {digest.hex()}")
+
     sig      = S.sign(sk, digest)
     assert len(sig) == sig_len, f"sig {len(sig)} != {sig_len}"
     header_page = pad(signable + sig, HEADER_BYTES)   # 8 KB
@@ -91,6 +104,7 @@ def main():
     for cmd, fn in [("keygen", cmd_keygen), ("sign", cmd_sign)]:
         p = sub.add_parser(cmd)
         p.add_argument("--scheme", required=True, choices=["44","65","87"])
+        p.add_argument("--hash", required=True, choices=["SHA-256","SHA3-256"])
         p.add_argument("--out", default=cmd)
         if cmd == "sign":
             p.add_argument("--key", required=True)
