@@ -2,7 +2,7 @@ CC=arm-none-eabi-gcc
 OBJCOPY=arm-none-eabi-objcopy
 SIZE=arm-none-eabi-size
 
-PQM4    = ../third_party_sw/pqm4
+PQM4    = ../../../third_party_sw/pqm4
 MUPQCOMMON  = $(PQM4)/mupq/common
 PQCLEAN = $(PQM4)/mupq/pqclean
 PCOMMON = $(PQCLEAN)/common
@@ -45,7 +45,8 @@ IMPL_INC = $(if $(filter clean,$(IMPL)), \
 IMPL_DEF= $(if $(filter clean,$(IMPL)),-DIMPL_CLEAN,-DIMPL_M4F)
 SCHEME_DEF = $(if $(filter ml-dsa-44,$(SCHEME)),-DSCHEME_44,$(if $(filter ml-dsa-65,$(SCHEME)),-DSCHEME_65,-DSCHEME_87))
 
-OUT = boot-$(IMPL)-$(SCHEME)-$(HASH)-$(FREQ)MHz
+OUT_DIR = out
+OUT = $(OUT_DIR)/boot-$(IMPL)-$(SCHEME)-$(HASH)-$(FREQ)MHz
 
 # ==== benchmarking ====
 
@@ -65,11 +66,12 @@ bench-m4f-87:   SCHEME=ml-dsa-87
 bench-clean-44 bench-m4f-44 bench-clean-65 bench-m4f-65 bench-clean-87 bench-m4f-87: _build
 
 _build:
-	$(CC) $(CFLAGS_BASE) $(IMPL_DEF) $(SCHEME_DEF) $(HASH_DEF) $(FREQ_DEF) $(IMPL_INC) $(LDFLAGS) \
+	@mkdir -p $(OUT_DIR)
+	$(CC) $(CFLAGS_BASE) $(IMPL_DEF) $(SCHEME_DEF) $(HASH_DEF) $(FREQ_DEF) $(IMPL_INC) $(LDFLAGS) -Wl,-Map=$(OUT).map \
 	  $(LOCAL_SRC) $(SRC) -o $(OUT).elf
-	$(OBJCOPY) -O binary $(OUT).elf $(OUT).bin 
-	$(SIZE) $(OUT).elf 
+	$(OBJCOPY) -O binary $(OUT).elf $(OUT).bin
+	$(SIZE) $(OUT).elf
 	@echo ">>> built $(OUT).bin"
 
 clean-build:
-	rm -f boot-*.elf boot-*.bin boot-*.map
+	rm -rf $(OUT_DIR)

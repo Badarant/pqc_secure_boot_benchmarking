@@ -10,7 +10,9 @@ Currently focusing on ARM Cortex cores:
 PQC schemes implementations are reused from third party implementation in:
 
 https://github.com/mupq/pqm4
+
 https://github.com/mupq/mupq/tree/ddcccedb2db9d0250856bd58ee5c46c61e506c5d
+
 https://github.com/pqclean/pqclean/tree/c3e6861fbb0a0b2721d2599c0a68430061414f18
 
 ## Getting Started
@@ -22,12 +24,14 @@ cd pqc_secure_boot_benchmarking/
 git submodule update --init --recursive
 ```
 
-### Making the program
+## Making the program
+
+### Nucleo L4R5ZI board
 
 Project compiled under Ubuntu with arm-none-eabi-gcc
 
 ```
-cd boot
+cd boards/nucleo_L4R5ZI/boot
 make clean-build 
 make (required scheme implementation) HASH=(required hash) FREQ=(required frequency)
 cd ../app
@@ -41,7 +45,7 @@ make
 
 (required hash) in [SHA_256, SHA3_256]
 
-### Signing the app
+## Signing the app
 
 For signing the app (firmware), the tools folder provides a Python signing script based on dilithium-py package. (dilithium-py by Giacomo Pope, dual-licensed MIT/Apache-2.0)
 
@@ -68,7 +72,9 @@ python secureboot-host-sign_app.py sign --scheme 87 --hash (required hash) --key
 
 (required hash) in [SHA_256, SHA3_256]
 
-### Flashing the binaries
+## Flashing the binaries
+
+### Nucleo L4R5ZI board
 
 Install OpenOCD from https://openocd.org/.
 
@@ -85,10 +91,20 @@ openocd -f board/st_nucleo_l4.cfg -c "program signed_87/signed_app.bin 0x0802000
 
 Then flash the binary:
 ```
-openocd -f board/st_nucleo_l4.cfg -c "program ../../boot/boot-m4f-ml-dsa-87.bin 0x08000000 verify reset exit"
+openocd -f board/st_nucleo_l4.cfg -c "program ../../boards/nucleo_L4R5ZI/boot/boot-m4f-ml-dsa-87.bin 0x08000000 verify reset exit"
 ```
 
 ## Reading the results
+
+### Nucleo L4R5ZI board
+
+To monitor the UART interface of th Nucleo board, you can use tty under Ubuntu:
+
+```
+stty -F /dev/ttyACM0 9600 raw
+cat /dev/ttyACM0 > myFileExample.txt
+```
+
 
 The boot will print on UART the ML-DSA scheme used, the stack usage, the frequency at which it runs, the SHA3 and Verify Cycles Count, as well as the verification verdict:
 
@@ -100,13 +116,6 @@ verify cycles: 4309934
 total cycles:  4343199
 stack usage:  12200bytes
 VALID -> boot
-```
-
-To monitor the UART interface of th Nucleo board, you can use tty under Ubuntu:
-
-```
-stty -F /dev/ttyACM0 9600 raw
-cat /dev/ttyACM0 > myFileExample.txt
 ```
 
 
