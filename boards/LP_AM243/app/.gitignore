@@ -1,0 +1,2 @@
+# build outputs (app.elf, app.bin, ...) - rebuilt by build.bat, never committed
+/out/

@@ -1,0 +1,13 @@
+# build outputs
+/obj/
+/generated/
+*.out
+*.map
+*.lnkxml
+*.mcelf
+*.mcelf.hs_fs
+*.mcelf_xip
+*.rprc*
+*.tiimage*
+sb.log
+build_log.txt

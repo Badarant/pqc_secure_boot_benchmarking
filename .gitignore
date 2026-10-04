@@ -3,3 +3,12 @@
 *.bin
 .vscode
 *.map
+
+# tools/provisioning.py output (repo root) + the nucleo board's own
+# per-scheme convention (keys_44/, signed_65/, ...): private/public keys and
+# signed images, never committed.
+*.key
+/keys/
+/out/
+keys_*/
+signed_*/

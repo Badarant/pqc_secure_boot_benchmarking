@@ -1,0 +1,9 @@
+# build outputs
+/obj/
+/generated/
+*.out
+*.map
+*.lnkxml
+*.tiimage*
+sb.log
+build_log.txt
