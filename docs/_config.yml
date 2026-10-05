@@ -1,0 +1,9 @@
+title: PQC Secure-Boot Benchmarking
+description: >-
+  Hardware-measured evaluations of post-quantum secure boot on Arm Cortex-M and
+  Cortex-R microcontrollers.
+theme: minima
+
+url: https://badarant.github.io
+baseurl: /pqc_secure_boot_benchmarking
+

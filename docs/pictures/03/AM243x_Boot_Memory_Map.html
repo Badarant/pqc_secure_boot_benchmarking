@@ -1,0 +1,374 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>AM243x Boot Memory Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: a stage chain across the top, then one stacked band-map panel per
+   physical memory, address-ordered, with reserved size as band height and
+   used/reserved as horizontal fill. */
+:root{
+  color-scheme: light;
+  --bg:#f2f4f7;  --surface:#ffffff;  --sunken:#e8ebf0;
+  --ink:#0f141a;  --muted:#5b6673;  --faint:#8a94a1;
+  --rule:#d3dae2;  --rule-strong:#b6c0cc;
+  --rom:#8a6526;   --rom-soft:#8a652622;
+  --r5f:#15647d;   --r5f-soft:#15647d22;
+  --m4f:#7c4680;   --m4f-soft:#7c468022;
+  --app:#3a6f4c;   --app-soft:#3a6f4c22;
+  --shared:#9a5330; --shared-soft:#9a533022;
+  --shadow:0 1px 2px rgba(15,20,26,.06), 0 8px 24px -16px rgba(15,20,26,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0d1116;  --surface:#141a21;  --sunken:#0a0e12;
+    --ink:#e6ebf1;  --muted:#98a3b1;  --faint:#6b7684;
+    --rule:#242d37;  --rule-strong:#35414e;
+    --rom:#d2a75a;   --rom-soft:#d2a75a26;
+    --r5f:#4fb4d6;   --r5f-soft:#4fb4d626;
+    --m4f:#c18ac6;   --m4f-soft:#c18ac626;
+    --app:#6fbe86;   --app-soft:#6fbe8626;
+    --shared:#dd9068; --shared-soft:#dd906826;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0d1116;  --surface:#141a21;  --sunken:#0a0e12;
+  --ink:#e6ebf1;  --muted:#98a3b1;  --faint:#6b7684;
+  --rule:#242d37;  --rule-strong:#35414e;
+  --rom:#d2a75a;   --rom-soft:#d2a75a26;
+  --r5f:#4fb4d6;   --r5f-soft:#4fb4d626;
+  --m4f:#c18ac6;   --m4f-soft:#c18ac626;
+  --app:#6fbe86;   --app-soft:#6fbe8626;
+  --shared:#dd9068; --shared-soft:#dd906826;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size:14px; line-height:1.5;
+}
+.wrap{max-width:1180px; margin:0 auto; padding-inline:16px; padding-block:34px 64px}
+h1,h2,h3{font-family:"Archivo", ui-sans-serif, system-ui, sans-serif; margin:0; text-wrap:balance}
+h1{font-size:clamp(25px,4.4vw,38px); font-weight:700; letter-spacing:-.02em; line-height:1.1}
+.mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums}
+
+header .lede{margin:12px 0 0; color:var(--muted); max-width:66ch; font-size:15px}
+.chain{
+  display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule);
+  border-radius:9px; overflow:hidden; margin-top:26px;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+}
+.stage{background:var(--surface); padding:13px 15px; min-width:0}
+.stage .n{font:600 10.5px/1 "IBM Plex Mono",monospace; letter-spacing:.11em; color:var(--faint)}
+.stage .t{font-family:"Archivo",sans-serif; font-weight:600; font-size:14.5px; margin-top:7px; display:flex; align-items:center; gap:7px}
+.stage .d{color:var(--muted); font-size:12.5px; margin-top:5px}
+.stage.off{opacity:.45}
+.stage.off .t::after{content:"not used"; font:500 10px/1 "IBM Plex Mono",monospace; letter-spacing:.08em; color:var(--faint); border:1px solid var(--rule); padding:3px 5px; border-radius:4px}
+.dot{width:9px;height:9px;border-radius:2px;flex:none}
+
+.controls{display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-top:30px}
+.controls .lab{font:600 10.5px/1 "IBM Plex Mono",monospace; letter-spacing:.11em; color:var(--faint); margin-right:3px}
+button.cfg{
+  font-family:"IBM Plex Sans",sans-serif; font-size:13px; font-weight:600;
+  background:var(--surface); color:var(--muted); border:1px solid var(--rule);
+  padding:7px 15px; border-radius:7px; cursor:pointer; transition:.14s;
+}
+button.cfg:hover{border-color:var(--rule-strong); color:var(--ink)}
+button.cfg[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+button.cfg:focus-visible{outline:2px solid var(--r5f); outline-offset:2px}
+.cfgnote{color:var(--muted); font-size:12.5px; margin-top:11px; min-height:1.5em}
+
+.panel{background:var(--surface); border:1px solid var(--rule); border-radius:11px; margin-top:26px; box-shadow:var(--shadow); overflow:hidden}
+.phead{padding:16px 18px 14px; border-bottom:1px solid var(--rule); display:flex; flex-wrap:wrap; gap:10px 18px; align-items:baseline}
+.phead h2{font-size:17px; font-weight:600; letter-spacing:-.01em}
+.phead .sub{color:var(--muted); font-size:12.5px}
+.phead .tot{margin-left:auto; font-size:12px; color:var(--muted)}
+.phead .tot b{color:var(--ink); font-weight:600}
+
+.map{padding:8px 18px 18px}
+.row{display:grid; grid-template-columns:86px 1fr; gap:14px; align-items:stretch}
+.addr{
+  font:400 11px/1 "IBM Plex Mono",monospace; color:var(--faint);
+  text-align:right; padding-top:7px; white-space:nowrap;
+  border-right:1px solid var(--rule); padding-right:10px;
+}
+.band{
+  position:relative; border:1px solid var(--edge,var(--rule-strong)); border-radius:5px;
+  background:var(--soft,var(--sunken)); overflow:hidden; margin-bottom:5px;
+  display:flex; align-items:center; min-width:0;
+}
+.fill{position:absolute; inset:0 auto 0 0; background:var(--hue,var(--r5f)); opacity:.19}
+.fill::after{content:""; position:absolute; inset:0 0 0 auto; width:2px; background:var(--hue,var(--r5f)); opacity:.85}
+.band .txt{position:relative; padding:6px 11px; display:flex; flex-wrap:wrap; gap:3px 12px; align-items:baseline; width:100%; min-width:0}
+.band .nm{font-family:"Archivo",sans-serif; font-weight:600; font-size:12.5px}
+.band .sz{font:400 11px/1.4 "IBM Plex Mono",monospace; color:var(--muted); margin-left:auto; text-align:right}
+.band .sz b{color:var(--ink); font-weight:600}
+.band .why{font-size:11.5px; color:var(--muted); flex-basis:100%}
+.band.freeband{
+  border-style:dashed; border-color:var(--rule); background:
+    repeating-linear-gradient(135deg, transparent 0 7px, var(--sunken) 7px 14px);
+  color:var(--muted);
+}
+.band.freeband .nm{font-weight:500; color:var(--muted)}
+.sub-rows{margin:2px 0 7px 0; padding-left:13px; border-left:2px solid var(--rule)}
+.srow{display:flex; flex-wrap:wrap; gap:2px 10px; align-items:baseline; padding:3px 0; font-size:12px}
+.srow .nm{font:500 11.5px/1.4 "IBM Plex Mono",monospace}
+.srow .bar{flex:1 1 90px; min-width:70px; height:5px; border-radius:3px; background:var(--sunken); overflow:hidden; position:relative}
+.srow .bar i{position:absolute; inset:0 auto 0 0; background:var(--hue,var(--r5f)); border-radius:3px}
+.srow .v{font:400 11px/1.4 "IBM Plex Mono",monospace; color:var(--muted); white-space:nowrap}
+.srow .v b{color:var(--ink); font-weight:600}
+
+.legend{display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:26px; padding:15px 18px; background:var(--surface); border:1px solid var(--rule); border-radius:11px}
+.lg{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted)}
+.sw{width:15px;height:15px;border-radius:4px;border:1px solid var(--rule-strong);flex:none}
+
+.notes{margin-top:26px; color:var(--muted); font-size:12.5px; max-width:78ch}
+.notes h3{font-size:13.5px; color:var(--ink); margin-bottom:8px; font-weight:600}
+.notes ul{margin:0; padding-left:18px} .notes li{margin-bottom:7px}
+.notes code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--sunken); padding:1px 5px; border-radius:4px; color:var(--ink)}
+@media (max-width:560px){ .row{grid-template-columns:70px 1fr; gap:9px} .addr{font-size:10px; padding-right:7px} }
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Memory map &mdash; AM243x secure boot</h1>
+  <p class="lede">The full boot chain on an AM243x LaunchPad (HS-FS): ROM FBL &rarr; SBL on Cortex-R5F &rarr; verified application, with the Cortex-M4F enclave in the path only in config A. Each band is one <b>reserved</b> segment inside the <b>available</b> memory, filled in proportion to how much is <b>used</b>. Figures come from the linker <span class="mono">.map</span> files and from on-target measurements.</p>
+</header>
+
+<div class="chain" id="chain"></div>
+
+<div class="controls" role="group" aria-label="Configuration">
+  <span class="lab">CONFIGURATION</span>
+  <button class="cfg" data-c="A" aria-pressed="true">A &mdash; enclave</button>
+  <button class="cfg" data-c="B" aria-pressed="false">B &mdash; R5F only</button>
+</div>
+<p class="cfgnote" id="cfgnote"></p>
+
+<div id="panels"></div>
+
+<div class="legend">
+  <span class="lg"><span class="sw" style="background:var(--rom-soft);border-color:var(--rom)"></span>ROM / SYSFW (TI)</span>
+  <span class="lg"><span class="sw" style="background:var(--r5f-soft);border-color:var(--r5f)"></span>SBL &mdash; Cortex-R5F</span>
+  <span class="lg"><span class="sw" style="background:var(--m4f-soft);border-color:var(--m4f)"></span>Enclave &mdash; Cortex-M4F</span>
+  <span class="lg"><span class="sw" style="background:var(--app-soft);border-color:var(--app)"></span>Verified application</span>
+  <span class="lg"><span class="sw" style="background:var(--shared-soft);border-color:var(--shared)"></span>Shared R5F&harr;M4F</span>
+  <span class="lg"><span class="sw" style="background:repeating-linear-gradient(135deg,transparent 0 4px,var(--sunken) 4px 8px)"></span>Unallocated</span>
+</div>
+
+<div class="notes">
+  <h3>Conventions and caveats</h3>
+  <ul>
+    <li><b>Band height</b> is proportional to the reserved size, with a 34&nbsp;px floor so the label fits &mdash; small regions (the public key, the IPC mailboxes) therefore look larger than they are. The <b>horizontal fill</b> shows used&nbsp;/&nbsp;reserved and is always drawn to true scale.</li>
+    <li>Sizes are <b>KiB of 1024 bytes</b>, which keeps every reserved region round, since all of them are powers of two. Anything under 1&nbsp;KiB stays in bytes &mdash; an 8-byte high-water mark says more that way than as 0.01&nbsp;KiB. Key and signature lengths stay in bytes throughout, because that is how FIPS&nbsp;204 states them.</li>
+    <li>Stack figures are on-target high-water marks from stack painting (<code>STACK_PAINT=1</code>), not static estimates. Both configurations are measured. The heap is the one exception: there is no heap painting, so <span class="mono">.sysmem</span> counts as fully used.</li>
+    <li>The 128&nbsp;KiB <span class="mono">.stack</span> reservation is sized for <b>config B</b>, where PQClean's ML-DSA runs on this core: its frame is dominated by fixed-size arrays (<span class="mono">polyvecl mat[K]</span> alone is 8&times;7 polynomials of 1&nbsp;KiB) and peaks at 92,856&nbsp;B. Config A needs 1,432&nbsp;B. One size is kept for both, because an identical memory map is what makes them comparable.</li>
+    <li><b>Config B never loads the enclave.</b> It skips the multicore ELF entirely, so the M4F is never started, the enclave image need not be flashed, and the bootloader's 56&nbsp;KiB <span class="mono">gElfBuffer</span> disappears from <span class="mono">.bss</span> &mdash; which is why B carries ~20&nbsp;KiB more ROM but ~58&nbsp;KiB less RAM than A.</li>
+    <li>Only config B links <span class="mono">malloc</span>: PQClean's <span class="mono">fips202.c</span> allocates SHAKE contexts (208&nbsp;B each, a handful live at a time). Config A emits no <span class="mono">.sysmem</span> section at all.</li>
+    <li>The ROM figures include the root-of-trust step: before the public key is used for anything, the SBL hashes it with SHA-256 and compares the result against a device fuse reference. It runs through the same implementation on the same core that configuration uses for the image &mdash; so in config A it is a second IPC round trip. The comparison is <b>advisory</b> on this HS-FS part, whose key-hash fuses are not programmed.</li>
+    <li>The flashed SBL is larger than its own code by a constant: <span class="mono">tiimage &minus; ROM = 231,997&nbsp;B</span> exactly in both configurations, which is SYSFW, the board configuration and the certificates that <span class="mono">rom_image_gen.py</span> prepends.</li>
+    <li>Flash is 64&nbsp;MiB of OSPI NOR, and nothing executes from it &mdash; XIP reads return corrupted data under this board's OSPI configuration, so everything is copied into MSRAM first. The application ceiling is therefore a <b>RAM</b> limit, not a flash one.</li>
+    <li>The <span class="mono">APPIMAGE</span> region reads back empty in both configurations. It binds TI's encrypted-boot scratch buffer, and this project does not define <code>ENC_BOOT</code>, so nothing references it and the linker drops it.</li>
+    <li>The R5F's 64&nbsp;KiB of tightly-coupled memory (ATCM + BTCM) is completely unused &mdash; the SBL runs entirely from MSRAM.</li>
+  </ul>
+</div>
+</div>
+
+<script>
+const K = 1024;
+const f = n => n.toLocaleString('en-US');
+const hex = n => '0x' + n.toString(16).toUpperCase().padStart(8,'0');
+
+/* Sizes in KiB, with significant digits that stay honest across four orders of
+   magnitude: bytes below 1 KiB (an 8-byte stack mark says more as "8 B" than as
+   "0.01 KiB"), MiB above 4 MiB. Specification quantities - an ML-DSA key or
+   signature length - stay in bytes wherever they appear, because that is how
+   FIPS 204 states them. */
+const num = (v, d) => v.toLocaleString('en-US', { maximumFractionDigits:d });
+const sz = n => {
+  if (n === null || n === undefined) return '—';
+  if (n < K) return f(n) + ' B';
+  const v = n / K;
+  if (v >= 4096) return num(n / (K*K), 2) + ' MiB';
+  return num(v, v < 10 ? 2 : v < 1000 ? 1 : 0) + ' KiB';
+};
+
+/* ---- measured data ------------------------------------------------------
+   ROM / section placement: linker .map files, release, crypto at -O2.
+   tiimage / mcelf: byte sizes of the signed images actually produced.
+   Stack peaks: on-target painting, 1324 KiB signed image, ML-DSA-87.   ---- */
+const CFG = {
+  A: { note:'SHA-256 and ML-DSA verify both on the M4F enclave, each requested over IPC. This R5F links no crypto at all.',
+       sblRom:83192, tiimage:315189, vecs:64, msram0:83128,
+       bss:74624, heap:0,
+       stackPeak:1432, irqPeak:8, fiqPeak:0, svcPeak:280, abtPeak:0, undPeak:0,
+       ipcUsed:512,
+       m4f:{ on:true, flash:59026, vecs:320, iram:109992, dram:1744, stackPeak:12232 } },
+  B: { note:'SHA-256 and ML-DSA verify both on the R5F, in software. The enclave is never started and nothing crosses an IPC boundary.',
+       sblRom:103032, tiimage:335029, vecs:64, msram0:102968,
+       bss:16768, heap:16384,
+       stackPeak:92856, irqPeak:8, fiqPeak:0, svcPeak:232, abtPeak:0, undPeak:0,
+       ipcUsed:0,
+       m4f:{ on:false, flash:0, vecs:0, iram:0, dram:0, stackPeak:null } }
+};
+
+const IMAGE = 1355776, SIGNED = 1363968, HDR = 8192;
+const PK_LEN = 2592, SIG_LEN = 4627, REPORT = 36;
+const STACK_RES = 131072, MODE_RES = 4096+256+4096+256+256;
+const MSRAM0_RES = 196352, MSRAM1_RES = 262144;
+
+const STAGES = c => [
+  { n:'STAGE 0', t:'ROM FBL', hue:'--rom', on:true,
+    d:'The ROM bootloader reads the bundle at flash offset 0, places SYSFW and the board config in the DMSC domain, then the SBL at 0x70000000.' },
+  { n:'STAGE 1', t:'SBL — boot (R5F)', hue:'--r5f', on:true,
+    d:'Brings up SYSFW and the board, reads the key and the signed image from OSPI into MSRAM, binds the key to the device, obtains the image digest and the ML-DSA verdict, and enforces it.' },
+  { n:'STAGE 2', t:'Enclave (M4F)', hue:'--m4f', on:c.m4f.on,
+    d: c.m4f.on
+      ? 'A crypto service that carries no state between IPC requests: each call arrives with its own addresses and returns a digest or a verdict. The SBL loads and starts it.'
+      : 'Config B does both crypto steps on the R5F, so the multicore ELF is never parsed and this core never runs.' },
+  { n:'STAGE 3', t:'Application (R5F)', hue:'--app', on:true,
+    d:'A position-dependent raw binary, run from MSRAM at 0x70071000 only after VERIFY PASS. Hand-off is a bx within the same core.' }
+];
+
+/* ---- rendering ---------------------------------------------------------- */
+function band(sp, k){
+  const h = Math.max(34, Math.min(230, Math.round(sp.size * k)));
+  const pct = sp.res ? Math.min(100, sp.used / sp.res * 100) : 0;
+  if (sp.free) return `
+    <div class="row"><div class="addr">${hex(sp.at)}</div>
+      <div class="band freeband" style="min-height:${Math.min(h,120)}px">
+        <div class="txt"><span class="nm">unallocated</span>
+        <span class="sz">${sz(sp.size)}</span></div></div></div>`;
+  const hue = `var(${sp.hue})`, soft = `var(${sp.hue}-soft)`;
+  const usedTxt = sp.used === null
+      ? '<b>not measured</b>' : `<b>${sz(sp.used)}</b> of ${sz(sp.res)}`;
+  return `
+    <div class="row"><div class="addr">${hex(sp.at)}</div>
+      <div class="band" style="min-height:${h}px; --edge:${hue}; --soft:${soft}; --hue:${hue}">
+        ${sp.used ? `<div class="fill" style="width:${pct}%"></div>` : ''}
+        <div class="txt">
+          <span class="nm">${sp.nm}</span>
+          <span class="sz">${usedTxt}</span>
+          ${sp.why ? `<span class="why">${sp.why}</span>` : ''}
+        </div>
+      </div></div>
+    ${sp.subs ? `<div class="sub-rows">${sp.subs.map(s => `
+      <div class="srow">
+        <span class="nm">${s.nm}</span>
+        <span class="bar"><i style="width:${s.res?Math.min(100,s.used/s.res*100):0}%;background:${hue}"></i></span>
+        <span class="v">${s.used===null?'<b>not measured</b>':`<b>${sz(s.used)}</b>`} / ${sz(s.res)}</span>
+      </div>`).join('')}</div>` : ''}`;
+}
+
+function panel(title, sub, total, used, spans){
+  const maxA = Math.max(...spans.filter(s=>!s.free).map(s=>s.size));
+  const k = 230 / maxA;
+  return `<section class="panel">
+    <div class="phead">
+      <h2>${title}</h2><span class="sub">${sub}</span>
+      <span class="tot">using <b>${sz(used)}</b> of ${sz(total)} &middot; ${(used/total*100).toFixed(used/total<0.05?2:1)}%</span>
+    </div>
+    <div class="map">${spans.map(s=>band(s,k)).join('')}</div>
+  </section>`;
+}
+
+function render(id){
+  const c = CFG[id];
+  document.getElementById('cfgnote').textContent = 'Config ' + id + ' — ' + c.note;
+  document.querySelectorAll('button.cfg').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.c === id)));
+
+  document.getElementById('chain').innerHTML = STAGES(c).map(s => `
+    <div class="stage${s.on ? '' : ' off'}">
+      <div class="n">${s.n}</div>
+      <div class="t"><span class="dot" style="background:var(${s.hue})"></span>${s.t}</div>
+      <div class="d">${s.d}</div>
+    </div>`).join('');
+
+  /* ---- FLASH (OSPI NOR, raw offsets) ---- */
+  const flashUsed = c.tiimage + c.m4f.flash + 4096 + SIGNED;
+  const flash = [
+    { at:0x000000, size:0x80000, res:0x80000, used:c.tiimage, hue:'--rom', nm:'SBL bundle @ 0x0',
+      why:`SYSFW + board config + certificates (231,997 B, identical in both configs) and the SBL's own ${sz(c.sblRom)} of code and data` },
+    { at:0x080000, size:0x180000, res:0x180000, used:c.m4f.flash, hue:'--m4f', nm:'Enclave image @ 0x80000',
+      why: c.m4f.on ? 'signed multicore ELF, loaded by the SBL into the M4F’s own IRAM'
+                    : 'config B never loads the enclave — this slot can stay empty' },
+    { at:0x200000, size:0x100000, res:0x100000, used:4096, hue:'--r5f', nm:'Public key @ 0x200000',
+      why:`ML-DSA-87 public key is ${f(PK_LEN)} B, in a 4 KiB page-padded file. Rotating the key needs no rebuild of either project` },
+    { at:0x300000, size:SIGNED, res:SIGNED, used:SIGNED, hue:'--app', nm:'signed_app.bin @ 0x300000',
+      why:`${sz(HDR)} header region (32 B signable header, then the ${f(SIG_LEN)} B ML-DSA-87 signature, 0xFF to the end) followed by the ${sz(IMAGE)} image` },
+    { at:0x300000+SIGNED, size:0x4000000-(0x300000+SIGNED), free:true }
+  ];
+
+  /* ---- MSRAM (shared, 2 MiB) ---- */
+  const modeUsed = c.irqPeak + c.fiqPeak + c.svcPeak + c.abtPeak + c.undPeak;
+  const msram1Used = c.stackPeak + c.bss + c.heap + modeUsed;
+  const msramUsed = c.vecs + c.msram0 + msram1Used + c.ipcUsed + IMAGE + REPORT + 131072;
+  const msram = [
+    { at:0x70000000, size:256, res:256, used:c.vecs, hue:'--r5f', nm:'MSRAM_VECS',
+      why:'the SBL vector table' },
+    { at:0x70000100, size:MSRAM0_RES, res:MSRAM0_RES, used:c.msram0, hue:'--r5f', nm:'MSRAM_0 — SBL code',
+      why:'.text + .rodata + .data, placed here by the ROM at boot' },
+    { at:0x70030000, size:MSRAM1_RES, res:MSRAM1_RES, used:msram1Used, hue:'--r5f', nm:'MSRAM_1 — SBL data',
+      why:'the stack, .bss, the heap and the R5F’s five mode stacks',
+      subs:[
+        { nm:'.stack (SYSTEM mode)', res:STACK_RES, used:c.stackPeak },
+        { nm:'.bss',                 res:c.bss,     used:c.bss },
+        ...(c.heap ? [{ nm:'.sysmem (heap)', res:c.heap, used:c.heap }] : []),
+        { nm:'mode stacks (irq/fiq/svc/abt/und)', res:MODE_RES, used:modeUsed }
+      ]},
+    { at:0x70070000, size:512, res:512, used:c.ipcUsed, hue:'--shared', nm:'IPC mailboxes',
+      why: c.m4f.on ? 'enclave_req_t / enclave_resp_t — the only memory both cores write'
+                    : 'reserved by the contract; config B registers no IPC client and writes nothing here' },
+    { at:0x70070200, size:3584, free:true },
+    { at:0x70071000, size:IMAGE, res:IMAGE, used:IMAGE, hue:'--app', nm:'Application window — FULL',
+      why:'BOOT_LOAD_ADDR up to APPIMAGE, filled to the ceiling: image_size equals BOOT_LOAD_MAX exactly. Raised from 896 KiB once the stack and APPIMAGE reservations were sized from measurement rather than guessed' },
+    { at:0x701BC000, size:16384, res:16384, used:0, hue:'--shared', nm:'APPIMAGE — SBL scratch',
+      why:'TI’s encrypted-boot buffer. ENC_BOOT is not defined here, so nothing references it and the linker drops it — the region reads back empty in both configs' },
+    { at:0x701C0000, size:131072, res:131072, used:REPORT, hue:'--r5f', nm:'boot_report_t',
+      why:'the report left for the application: verdict, algo, image size, hash and verify cycle counts, R5F clock' },
+    { at:0x701E0000, size:131072, res:131072, used:131072, hue:'--rom', nm:'DMSC reserved',
+      why:'never freed here — this SBL performs no self-reset, so that hand-off never happens' }
+  ];
+
+  /* ---- M4F local memories ---- */
+  const m4 = c.m4f.on ? [
+    { at:0x00000000, size:512, res:512, used:c.m4f.vecs, hue:'--m4f', nm:'M4F_VECS' },
+    { at:0x00000200, size:196096, res:196096, used:c.m4f.iram, hue:'--m4f', nm:'M4F_IRAM',
+      why:'.text + .rodata + .data + .sysmem + the MSP stack, all in the M4F’s own internal RAM',
+      subs:[ { nm:'.stack (MSP)', res:49152, used:c.m4f.stackPeak } ] },
+    { at:0x00030000, size:65536, res:65536, used:c.m4f.dram, hue:'--m4f', nm:'M4F_DRAM', why:'.bss' }
+  ] : [
+    { at:0x00000000, size:262144, res:262144, used:0, hue:'--m4f', nm:'M4F IRAM + DRAM — never started',
+      why:'config B skips the multicore ELF, so this core is never released from reset' }
+  ];
+
+  /* ---- R5F TCM ---- */
+  const tcm = [
+    { at:0x00000000, size:64, res:64, used:0, hue:'--r5f', nm:'R5F_VECS' },
+    { at:0x00000040, size:32704, res:32704, used:0, hue:'--r5f', nm:'R5F_TCMA (ATCM)' },
+    { at:0x41010000, size:32768, res:32768, used:0, hue:'--r5f', nm:'R5F_TCMB0 (BTCM)' }
+  ];
+
+  document.getElementById('panels').innerHTML =
+      panel('Flash — OSPI NOR', '64 MiB, raw offsets from 0x0 · XIP window at 0x60000000',
+            0x4000000, flashUsed, flash)
+    + panel('MSRAM — 2 MiB, shared', '0x70000000–0x70200000 · SBL, application and the IPC channel',
+            0x200000, msramUsed, msram)
+    + panel('M4F memories', 'IRAM + DRAM local to the enclave, physically separate from MSRAM',
+            262144, c.m4f.vecs + c.m4f.iram + c.m4f.dram, m4)
+    + panel('R5F tightly-coupled memories', 'ATCM and BTCM, local to the core',
+            65536, 0, tcm);
+}
+
+document.querySelectorAll('button.cfg').forEach(b =>
+  b.addEventListener('click', () => render(b.dataset.c)));
+render('A');
+</script>
+
+</body></html>

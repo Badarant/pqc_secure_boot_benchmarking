@@ -143,7 +143,7 @@ where scheme is 44, 65 or 87
 The app
 
 ```
-app\build.bat
+.\app\build.bat
 ```
 
 ## Provision 
@@ -151,14 +151,20 @@ app\build.bat
 From the **repo root**:
 
 ```
-python tools\provisioning.py --scheme 65 --app boards\LP_AM243\app\out\app.bin
+python tools\provisioning.py --scheme scheme --app boards\LP_AM243\app\out\app.bin --pad-to padded_app_size
 ```
+
+where scheme is 44, 65 or 87
+
+and padded_app_size is the total size required for the app for signing. Maximum 1355776
 
 ## Flashing and Running the Program
 
+Connect the USB Micro-B connector (for JTAG and UART) of the AM243 LP board to you host PC. Identify the COM number assigned to this connection, typically named 
+*XDS110 Class Application/User UART* in the Device Manager. Examples below showed on COM6. Replace with the COM number assigned on your machine.
+
 Board in `UART` boot-mode for flashing (see "Boot-Mode Selection Table" in [AM243x LaunchPad™ Development Kit User's Guide](https://www.ti.com/lit/ug/spruj12f/spruj12f.pdf?ts=1791092648123&ref_url=https%253A%252F%252Fwww.ti.com%252Ftool%252FLP-AM243)).
 
-Examples below showed on COM6. Replace with the COM number assigned on your machine.
 
 Flash boot+enclave+pubkey+app
 
@@ -187,3 +193,52 @@ Or (re-)flash just `signed_app.bin`;
 Switch to `QSPI Flash` boot-mode and power-cycle to run. 
 
 
+## Reading the Measurements
+
+Open a serial terminal and connecting to the same COM number you used for Flashing. Configure the terminal for Serial 115200 baud, 8 databits and 1 stop bit.
+
+At board power up, these measurements are sent to terminal:
+
+ ```
+DMSC Firmware Version 12.0.2--v12.00.02 (Clever Cat)
+DMSC Firmware revision 0xc
+DMSC ABI revision 4.0
+
+KPI_DATA: [BOOTLOADER_PROFILE] CPU Clock        : 800.000 MHz
+KPI_DATA: [BOOTLOADER_PROFILE] Boot Media       : NOR SPI FLASH
+KPI_DATA: [BOOTLOADER_PROFILE] Boot Media Clock : 100.000 MHz
+KPI_DATA: [BOOTLOADER_PROFILE] Boot Image Size  : 55 KB
+KPI_DATA: [BOOTLOADER_PROFILE] Cores present    :
+m4f0-0
+KPI_DATA: [BOOTLOADER PROFILE] SYSFW init                       :      10810us
+KPI_DATA: [BOOTLOADER PROFILE] System_init                      :      10966us
+KPI_DATA: [BOOTLOADER PROFILE] Drivers_open                     :       1663us
+KPI_DATA: [BOOTLOADER PROFILE] Board_driversOpen                :     644830us
+KPI_DATA: [BOOTLOADER PROFILE] Sciclient Get Version            :       9935us
+KPI_DATA: [BOOTLOADER PROFILE] CPU load                         :      16766us
+KPI_DATA: [BOOTLOADER PROFILE] SBL End                          :          3us
+KPI_DATA: [BOOTLOADER_PROFILE] SBL Total Time Taken             :     694975us
+
+Image loading done, switching to application ...
+
+==== AM243 boot (R5F orchestrator) ====
+image_size: 349
+rot: pubkey sha256 = 1aaef6e1e93f63119f2f3c4f06e15fcc72b19f1664ef69c8e05a778c2dee0fe6
+rot: fuse compare MISMATCH - ADVISORY ONLY (HS-FS part, key-hash fuses not programmed)
+SHA_256 digest: f186b233332138de68bc409c29aae7dd05da20bfb3a5958efea942a3eb596864
+[bench] R5F @ 800 MHz, M4F @ 400 MHz  (config A: SHA256+VERIFY via IPC)
+[bench] sha256 (ipc)  :      86028 R5F cycles  (107 us)
+[bench] sha256 (m4f)  :      39233 M4F cycles  (98 us)
+[bench] rot pk hash (ipc):     358051 R5F cycles  (447 us)  over 2592 B
+[bench] rot pk hash (m4f):     174021 M4F cycles  (435 us)
+[bench] verify (ipc)  :   13153478 R5F cycles  (16441 us)
+[bench] verify (m4f)  :    6573064 M4F cycles  (16432 us)
+[bench] ipc overhead  : sha256 7562 R5F cycles (9 us), verify 7350 R5F cycles (9 us)
+VERIFY PASS
+boot: image authentic
+boot: image at 0x70071000 (349 bytes)
+jumping to 0x70071000
+
+[app] App loaded by SBL, started and running
+[app] done
+ ```
