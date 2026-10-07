@@ -9,6 +9,14 @@ Included and used components:
   - crypto_sign/ml-dsa-65/clean/ == reference implementation for ML-DSA-65, under its license present in its folder
   - common/fips202.* == Keccak/SHA-3 based on public domain implementation (Van Keer; Van Assche, Bernstein, Schwabe)
 
+TEXAS INSTRUMENTS
+boards/LP_AM243/boot/main.c is derived from the sbl_ospi example of the
+Texas Instruments MCU+ SDK for AM243x, version 12.00.00.27, and is used and
+redistributed under the BSD-3-Clause license, as stated for the MCU+ SDK in that
+SDK's license manifest (docs/manifest.html). TI's copyright notice and the full
+BSD-3-Clause text are retained in that file. The SysConfig files and build
+makefiles under boards/LP_AM243/ are likewise derived from that SDK's examples.
+No TI confidential or NDA material is included in this repository.
 
 ORIGINAL CODE
 Original code of this project (boot, app, tools) is licensed under Apache 2.0 license.

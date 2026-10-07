@@ -200,25 +200,6 @@ Open a serial terminal and connecting to the same COM number you used for Flashi
 At board power up, these measurements are sent to terminal:
 
  ```
-DMSC Firmware Version 12.0.2--v12.00.02 (Clever Cat)
-DMSC Firmware revision 0xc
-DMSC ABI revision 4.0
-
-KPI_DATA: [BOOTLOADER_PROFILE] CPU Clock        : 800.000 MHz
-KPI_DATA: [BOOTLOADER_PROFILE] Boot Media       : NOR SPI FLASH
-KPI_DATA: [BOOTLOADER_PROFILE] Boot Media Clock : 100.000 MHz
-KPI_DATA: [BOOTLOADER_PROFILE] Boot Image Size  : 55 KB
-KPI_DATA: [BOOTLOADER_PROFILE] Cores present    :
-m4f0-0
-KPI_DATA: [BOOTLOADER PROFILE] SYSFW init                       :      10810us
-KPI_DATA: [BOOTLOADER PROFILE] System_init                      :      10966us
-KPI_DATA: [BOOTLOADER PROFILE] Drivers_open                     :       1663us
-KPI_DATA: [BOOTLOADER PROFILE] Board_driversOpen                :     644830us
-KPI_DATA: [BOOTLOADER PROFILE] Sciclient Get Version            :       9935us
-KPI_DATA: [BOOTLOADER PROFILE] CPU load                         :      16766us
-KPI_DATA: [BOOTLOADER PROFILE] SBL End                          :          3us
-KPI_DATA: [BOOTLOADER_PROFILE] SBL Total Time Taken             :     694975us
-
 Image loading done, switching to application ...
 
 ==== AM243 boot (R5F orchestrator) ====
